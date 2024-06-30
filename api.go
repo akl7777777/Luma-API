@@ -87,8 +87,9 @@ func Generations(c *gin.Context) {
 		common.WrapperLumaError(c, err, http.StatusInternalServerError)
 		return
 	}
-
-	c.JSON(resp.StatusCode, res[0])
+	// 给res添加server_id,就是res[0]里面的id
+	res[0].(map[string]any)["server_id"] = res[0].(map[string]any)["id"]
+	c.JSON(http.StatusOK, res[0])
 }
 
 // @Summary Submit luma generate video task
