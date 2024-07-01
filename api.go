@@ -14,10 +14,11 @@ import (
 )
 
 const (
-	SubmitEndpoint     = "/api/photon/v1/generations/"
-	GetTaskEndpoint    = "/api/photon/v1/generations%s"
-	FetchTaskEndpoint  = "/api/photon/v1/generations/%s"
-	FileUploadEndpoint = "/api/photon/v1/generations/file_upload"
+	SubmitEndpoint                  = "/api/photon/v1/generations/"
+	GetTaskEndpoint                 = "/api/photon/v1/generations%s"
+	FetchTaskEndpoint               = "/api/photon/v1/generations/%s"
+	FileUploadEndpoint              = "/api/photon/v1/generations/file_upload"
+	GetTaskDownloadVideoUrlEndpoint = "/api/photon/v1/generations/%s/download_video_url"
 )
 
 var CommonHeaders = map[string]string{
@@ -136,6 +137,8 @@ func Task(c *gin.Context) {
 	serverId := c.Query("server_id")
 	fmt.Println("id:", id, "server_id:", serverId)
 	url := fmt.Sprintf(common.BaseUrl+FetchTaskEndpoint, id)
+	// GetTaskDownloadVideoUrlEndpoint
+	downloadVideoUrl := fmt.Sprintf(common.BaseUrl+GetTaskDownloadVideoUrlEndpoint, id)
 	resp, err := DoRequest("GET", url, nil, nil)
 	if err != nil {
 		common.WrapperLumaError(c, err, http.StatusInternalServerError)
@@ -143,18 +146,48 @@ func Task(c *gin.Context) {
 	}
 	defer resp.Body.Close()
 
-	c.Writer.WriteHeader(resp.StatusCode)
-	for key, values := range resp.Header {
-		for _, value := range values {
-			c.Writer.Header().Add(key, value)
-		}
-	}
-	// 读取响应体
-	_, err = io.Copy(c.Writer, resp.Body)
+	// 解析resp.Body转json
+	body, err := io.ReadAll(resp.Body)
 	if err != nil {
 		common.WrapperLumaError(c, err, http.StatusInternalServerError)
 		return
 	}
+	var res any
+	err = json.Unmarshal(body, &res)
+	if err != nil {
+		common.WrapperLumaError(c, err, http.StatusInternalServerError)
+		return
+	}
+	// 获取downloadVideoUrl
+	respDownload, err := DoRequest("GET", downloadVideoUrl, nil, nil)
+	if err != nil {
+		common.WrapperLumaError(c, err, http.StatusInternalServerError)
+		return
+	}
+	defer respDownload.Body.Close()
+
+	// 解析respDownload.Body转json
+	bodyDownload, err := io.ReadAll(respDownload.Body)
+	if err != nil {
+		common.WrapperLumaError(c, err, http.StatusInternalServerError)
+		return
+	}
+	var resDownload any
+	err = json.Unmarshal(bodyDownload, &resDownload)
+	if err != nil {
+		common.WrapperLumaError(c, err, http.StatusInternalServerError)
+		return
+	}
+	// 解析resDownload 中的JSON.video.download_url
+	res.(map[string]any)["video"].(map[string]any)["download_url"] = resDownload.(map[string]any)["url"]
+
+	c.Writer.WriteHeader(resp.StatusCode)
+	//for key, values := range resp.Header {
+	//	for _, value := range values {
+	//		c.Writer.Header().Add(key, value)
+	//	}
+	//}
+	c.JSON(http.StatusOK, res)
 	return
 }
 
