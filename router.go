@@ -17,10 +17,11 @@ func RegisterRouter(r *gin.Engine) {
 	docs.SwaggerInfo.BasePath = "/"
 	r.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerfiles.Handler))
 
-	apiRouter := r.Group("/luma", middleware.SecretAuth())
+	apiRouter := r.Group("/luma/v1", middleware.SecretAuth())
 	{
 		apiRouter.POST("/generations/", Generations)
 		apiRouter.GET("/generations/*action", Fetch)
+		apiRouter.GET("/task", Task)
 		apiRouter.POST("/generations/file_upload", Upload)
 	}
 }

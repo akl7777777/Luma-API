@@ -16,6 +16,7 @@ import (
 const (
 	SubmitEndpoint     = "/api/photon/v1/generations/"
 	GetTaskEndpoint    = "/api/photon/v1/generations%s"
+	FetchTaskEndpoint  = "/api/photon/v1/generations/%s"
 	FileUploadEndpoint = "/api/photon/v1/generations/file_upload"
 )
 
@@ -107,6 +108,34 @@ func Fetch(c *gin.Context) {
 	if c.Request.URL.RawQuery != "" {
 		url = fmt.Sprintf("%s?%s", url, c.Request.URL.RawQuery)
 	}
+	resp, err := DoRequest("GET", url, nil, nil)
+	if err != nil {
+		common.WrapperLumaError(c, err, http.StatusInternalServerError)
+		return
+	}
+	defer resp.Body.Close()
+
+	c.Writer.WriteHeader(resp.StatusCode)
+	for key, values := range resp.Header {
+		for _, value := range values {
+			c.Writer.Header().Add(key, value)
+		}
+	}
+	// 读取响应体
+	_, err = io.Copy(c.Writer, resp.Body)
+	if err != nil {
+		common.WrapperLumaError(c, err, http.StatusInternalServerError)
+		return
+	}
+	return
+}
+
+func Task(c *gin.Context) {
+	// 获取query参数
+	id := c.Query("id")
+	serverId := c.Query("server_id")
+	fmt.Println("id:", id, "server_id:", serverId)
+	url := fmt.Sprintf(common.BaseUrl+FetchTaskEndpoint, id)
 	resp, err := DoRequest("GET", url, nil, nil)
 	if err != nil {
 		common.WrapperLumaError(c, err, http.StatusInternalServerError)
