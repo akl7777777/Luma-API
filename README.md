@@ -124,6 +124,7 @@ go mod tidy
 MIT © [Luma API](./license)
 
 ## Buy Me a Coke
-![zanshangcode.jpg](./docs/images/zanshangcode.jpg)
+![jingyingma](https://github.com/akl7777777/Luma-API/assets/84266551/d1d9ae4b-f13e-4ff4-9ed8-9bfcbd5ac199)
+
 
 This project is open-source on GitHub under the MIT license and is free of charge. If you find this project helpful, please give it a star and share it. Thank you for your support!
